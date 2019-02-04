@@ -1,19 +1,20 @@
 import numpy
 from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Dense, Flatten, Dropout
+from keras.layers import Dense
+from keras.layers import Flatten
+
+from keras.layers import Dropout
 from keras.utils import np_utils
+
+from keras.callbacks import TensorBoard
 import json
 
-from wandb.keras import WandbCallback
 import wandb
+from wandb.keras import WandbCallback
 
-run = wandb.init(allow_val_change=True)
+run = wandb.init()
 config = run.config
-config.optimizer = "adam"
-config.epochs = 45
-config.dropout = [0.25, 0.1]
-config.hidden_nodes = 100
 
 # load data
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
@@ -32,17 +33,22 @@ labels = range(10)
 
 num_classes = y_train.shape[1]
 
+#tensorboard
+tensorboard = TensorBoard(log_dir="logs")
+
 # create model
 model=Sequential()
 model.add(Flatten(input_shape=(img_width,img_height)))
-model.add(GaussianNoise(stddev))
-model.add(Dense(config.hidden_nodes, activation='relu'))
-model.add(Dropout(config.dropout[1]))
 model.add(Dense(num_classes, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer=config.optimizer,
-                    metrics=['accuracy'])
-
+model.compile(loss='categorical_crossentropy', optimizer='adam')
 
 # Fit the model
-model.fit(X_train, y_train, validation_data=(X_test, y_test),
-        epochs=config.epochs, callbacks=[WandbCallback(data_type="image", labels=labels)])
+history = model.fit(X_train, y_train, epochs=config.epochs,
+        batch_size=config.batch_size, validation_data=(X_test, y_test),
+        callbacks=[tensorboard, WandbCallback(validation_data=X_test, labels=labels)])
+
+# Final evaluation of the model
+scores = model.evaluate(X_test, y_test, verbose=0)
+
+with open('metrics.json', 'w') as outfile:
+    json.dump(scores, outfile)

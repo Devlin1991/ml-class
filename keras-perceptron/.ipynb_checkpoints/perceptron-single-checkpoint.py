@@ -20,7 +20,6 @@ is_five_test = y_test == 5
 
 # labels array to act as a conversion of the boolean is_five_* values into human readable labels
 labels = ["Not Five", "Is Five"]
-labels = [0:9]
 
 # Stores the dimensions of the training data images which are stored in index 1 and 2 of X_train
 img_width = X_train.shape[1]
